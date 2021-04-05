@@ -1,0 +1,12 @@
+[app]
+    name        = "golang-backend-example"
+    environment = "development"
+    port        = 8000
+
+[database]
+    host        = "postgresdb" # Change to localhost on local machine development
+    port        = 5432
+    name        = "linkaja_test"
+    username    = "postgres"
+    password    = "password"
+    sslmode     = "disable"

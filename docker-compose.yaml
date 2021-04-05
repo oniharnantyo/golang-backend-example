@@ -1,0 +1,26 @@
+version: "3.7"
+services:
+  postgresdb:
+    image: postgres:latest
+    environment:
+      POSTGRES_PASSWORD: "password"
+      POSTGRES_DB: "linkaja_test"
+      POSTGRES_USER: "postgres"
+      POSTGRES_HOST: "0.0.0.0"
+      POSTGRES_PORT: 5432
+      PGDATA: /var/lib/postgresql_new/data/pg_data
+    ports:
+      - "5432:5432"
+    restart: always
+  app:
+    container_name: linkaja-test
+    image: oniharnantyo/linkaja-test:latest
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgresdb
+    links:
+      - postgresdb
+    volumes:
+      - ./.config.toml:/.config.toml
+    restart: always
