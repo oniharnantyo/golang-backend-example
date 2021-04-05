@@ -1,5 +1,5 @@
-# LinkAja Test
-Simple Rest API to complete Code Assignment from LinkAja.
+# Golang Backend Example
+Simple Rest API using Golang.
 
 ## Requirement
 ### Docker Environment
