@@ -13,8 +13,8 @@ services:
       - "5432:5432"
     restart: always
   app:
-    container_name: linkaja-test
-    image: oniharnantyo/linkaja-test:latest
+    container_name: golang-backend-example
+    image: oniharnantyo/golang-backend-example:latest
     ports:
       - "8000:8000"
     depends_on:

@@ -2,7 +2,7 @@ package domain
 
 import (
 	"context"
-	"linkaja-test/util"
+	"golang-backend-example/util"
 )
 
 type (

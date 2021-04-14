@@ -3,9 +3,9 @@ package usecase
 import (
 	"context"
 	"database/sql"
-	"linkaja-test/domain"
-	repository_account_mock "linkaja-test/services/account/repository/mock"
-	repository_customer_mock "linkaja-test/services/customer/repository/mock"
+	"golang-backend-example/domain"
+	repository_account_mock "golang-backend-example/services/account/repository/mock"
+	repository_customer_mock "golang-backend-example/services/customer/repository/mock"
 	"testing"
 
 	"github.com/pkg/errors"

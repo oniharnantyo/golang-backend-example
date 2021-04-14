@@ -2,7 +2,7 @@ package mock
 
 import (
 	"context"
-	"linkaja-test/domain"
+	"golang-backend-example/domain"
 
 	"github.com/stretchr/testify/mock"
 )

@@ -5,13 +5,13 @@ run:
 	@go run main.go
 
 build:
-	@go build -o linkaja-test main.go
+	@go build -o golang-backend-example main.go
 
 docker:
-	@docker build -t oniharnantyo/linkaja-test .
+	@docker build -t oniharnantyo/golang-backend-example .
 
 docker-compose:
 	@docker-compose up -d
 
 docker-push:
-	@docker push oniharnantyo/linkaja-test
+	@docker push oniharnantyo/golang-backend-example

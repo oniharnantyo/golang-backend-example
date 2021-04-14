@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"linkaja-test/domain"
-	"linkaja-test/util"
+	"golang-backend-example/domain"
+	"golang-backend-example/util"
 )
 
 type accountRepository struct {

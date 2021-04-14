@@ -4,9 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"linkaja-test/database"
-	"linkaja-test/database/migration"
-	"linkaja-test/domain"
+	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
+	"golang-backend-example/database"
+	"golang-backend-example/database/migration"
+	"golang-backend-example/domain"
 	"log"
 	"net/http"
 	"os"
@@ -14,17 +16,15 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/gorilla/mux"
-
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
-	delivery_http_account "linkaja-test/services/account/delivery/http"
-	repository_account "linkaja-test/services/account/repository"
-	usecase_account "linkaja-test/services/account/usecase"
-	delivery_http_customer "linkaja-test/services/customer/delivery/http"
-	repository_customer "linkaja-test/services/customer/repository"
-	usecase_customer "linkaja-test/services/customer/usecase"
+	delivery_http_account "golang-backend-example/services/account/delivery/http"
+	repository_account "golang-backend-example/services/account/repository"
+	usecase_account "golang-backend-example/services/account/usecase"
+	delivery_http_customer "golang-backend-example/services/customer/delivery/http"
+	repository_customer "golang-backend-example/services/customer/repository"
+	usecase_customer "golang-backend-example/services/customer/usecase"
 )
 
 func Run() {
@@ -102,7 +102,7 @@ func initService(dbPool *sql.DB, logger *logrus.Logger) (domain.AccountUseCase, 
 func initHandler(accountUseCase domain.AccountUseCase, customerUseCase domain.CustomerUseCase, logger *logrus.Logger) {
 	ctx := context.Background()
 
-	r := mux.NewRouter()
+	r := gin.Default()
 
 	http.Handle("/", r)
 
@@ -117,25 +117,32 @@ func initHandler(accountUseCase domain.AccountUseCase, customerUseCase domain.Cu
 		Handler:      r,
 	}
 
-	idleConnsClosed := make(chan struct{})
+	// Initializing the server in a goroutine so that
+	// it won't block the graceful shutdown handling below
 	go func() {
-		sigint := make(chan os.Signal, 1)
-		signal.Notify(sigint, syscall.SIGINT, syscall.SIGTERM)
-		<-sigint
-
-		if err := srv.Shutdown(ctx); err != nil {
-			logger.Printf("Server shutdown error : %v", err)
+		if err := srv.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
+			log.Printf("listen: %s\n", err)
 		}
-
-		logger.Println("Server shutdown gracefully")
-		close(idleConnsClosed)
 	}()
 
-	logger.Println(fmt.Sprintf("Server Listen And Serve on Port : %d", viper.GetInt("app.port")))
-	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-		logger.Println(fmt.Sprintf("err on listen and serve : %v", err))
-		os.Exit(0)
+	// Wait for interrupt signal to gracefully shutdown the server with
+	// a timeout of 5 seconds.
+	quit := make(chan os.Signal)
+	// kill (no param) default send syscall.SIGTERM
+	// kill -2 is syscall.SIGINT
+	// kill -9 is syscall.SIGKILL but can't be catch, so don't need add it
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("Shutting down server...")
+
+	// The context is used to inform the server it has 5 seconds to finish
+	// the request it is currently handling
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatal("Server forced to shutdown:", err)
 	}
 
-	<-idleConnsClosed
+	log.Println("Server exiting")
 }

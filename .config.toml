@@ -4,9 +4,9 @@
     port        = 8000
 
 [database]
-    host        = "postgresdb" # Change to localhost on local machine development
+    host        = "127.0.0.1" # Change to localhost on local machine development
     port        = 5432
-    name        = "linkaja_test"
+    name        = "backend_golang_example"
     username    = "postgres"
     password    = "password"
     sslmode     = "disable"

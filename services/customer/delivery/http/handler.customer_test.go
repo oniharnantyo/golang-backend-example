@@ -4,15 +4,14 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
-	"linkaja-test/domain"
-	customer_usecase_mock "linkaja-test/services/customer/usecase/mock"
+	"github.com/gin-gonic/gin"
+	"golang-backend-example/domain"
+	customer_usecase_mock "golang-backend-example/services/customer/usecase/mock"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/sirupsen/logrus"
-
-	"github.com/gorilla/mux"
 
 	"github.com/stretchr/testify/mock"
 
@@ -35,7 +34,7 @@ func TestCustomerHandler_HandlerGetCustomerList(t *testing.T) {
 
 	mockCustomerUseCase.On("List", mock.Anything, mock.AnythingOfType("domain.CustomerListParam")).Return(mockCustomers, nil).Once()
 
-	r := mux.NewRouter()
+	r := gin.Default()
 	r = NewCustomerHandler(r, mockCustomerUseCase, logger)
 
 	req, err := http.NewRequest(http.MethodGet, "/customer?limit=10&offset=0&search=&order=asc", nil)
@@ -60,7 +59,7 @@ func TestCustomerHandler_HandlerGetCustomerByCustomerNumber(t *testing.T) {
 
 		mockCustomerUseCase.On("GetByCustomerNumber", mock.Anything, mock.AnythingOfType("int")).Return(mockCustomer, nil).Once()
 
-		r := mux.NewRouter()
+		r := gin.Default()
 		r = NewCustomerHandler(r, mockCustomerUseCase, logger)
 
 		req, err := http.NewRequest(http.MethodGet, "/customer/1", nil)
@@ -84,7 +83,7 @@ func TestCustomerHandler_HandlerGetCustomerByCustomerNumber(t *testing.T) {
 
 		mockCustomerUseCase.On("GetByCustomerNumber", mock.Anything, mock.AnythingOfType("int")).Return(domain.Customer{}, sql.ErrNoRows).Once()
 
-		r := mux.NewRouter()
+		r := gin.Default()
 		r = NewCustomerHandler(r, mockCustomerUseCase, logger)
 
 		req, err := http.NewRequest(http.MethodGet, "/customer/1", nil)
@@ -110,7 +109,7 @@ func TestCustomerHandler_HandlerCustomerStore(t *testing.T) {
 
 	mockCustomerUseCase.On("Store", mock.Anything, mock.AnythingOfType("*domain.Customer")).Return(mockCustomer, nil).Once()
 
-	r := mux.NewRouter()
+	r := gin.Default()
 	r = NewCustomerHandler(r, mockCustomerUseCase, logger)
 
 	reqBody, err := json.Marshal(mockCustomer)
@@ -137,7 +136,7 @@ func TestCustomerHandler_HandlerCustomerUpdate(t *testing.T) {
 
 	mockCustomerUseCase.On("Update", mock.Anything, mock.AnythingOfType("*domain.Customer")).Return(mockCustomer, nil).Once()
 
-	r := mux.NewRouter()
+	r := gin.Default()
 	r = NewCustomerHandler(r, mockCustomerUseCase, logger)
 
 	reqBody, err := json.Marshal(mockCustomer)
@@ -164,7 +163,7 @@ func TestCustomerHandler_HandlerCustomerDelete(t *testing.T) {
 
 	mockCustomerUseCase.On("Delete", mock.Anything, mock.AnythingOfType("*domain.Customer")).Return(mockCustomer, nil).Once()
 
-	r := mux.NewRouter()
+	r := gin.Default()
 	r = NewCustomerHandler(r, mockCustomerUseCase, logger)
 
 	reqBody, err := json.Marshal(mockCustomer)

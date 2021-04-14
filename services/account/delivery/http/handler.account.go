@@ -2,17 +2,15 @@ package delivery_http_account
 
 import (
 	"database/sql"
-	"encoding/json"
-	"linkaja-test/domain"
-	"linkaja-test/util"
+	"fmt"
+	"github.com/gin-gonic/gin"
+	"golang-backend-example/domain"
 	"net/http"
 	"strconv"
 
 	"github.com/pkg/errors"
 
 	"github.com/sirupsen/logrus"
-
-	"github.com/gorilla/mux"
 )
 
 type AccountHandler struct {
@@ -20,158 +18,148 @@ type AccountHandler struct {
 	logger         *logrus.Logger
 }
 
-func NewAccountHandler(r *mux.Router, c domain.AccountUseCase, l *logrus.Logger) *mux.Router {
-	handler := &AccountHandler{accountUseCase: c, logger: l}
+func NewAccountHandler(r *gin.Engine, ctx domain.AccountUseCase, l *logrus.Logger) *gin.Engine {
+	handler := &AccountHandler{accountUseCase: ctx, logger: l}
 
-	r.Handle("/account", http.HandlerFunc(handler.HandlerGetAccountList)).Methods(http.MethodGet)
-	r.Handle("/account/{account_number}", http.HandlerFunc(handler.HandlerGetAccountByAccountNumber)).Methods(http.MethodGet)
-	r.Handle("/account", http.HandlerFunc(handler.HandlerAccountStore)).Methods(http.MethodPost)
-	r.Handle("/account", http.HandlerFunc(handler.HandlerAccountUpdate)).Methods(http.MethodPut)
-	r.Handle("/account", http.HandlerFunc(handler.HandlerAccountDelete)).Methods(http.MethodDelete)
-	r.Handle("/account/{from_account_number}/transfer", http.HandlerFunc(handler.HandlerAccountTransfer)).Methods(http.MethodPost)
+	r.GET("/account",handler.HandlerGetAccountList)
+	r.GET("/account/:account_number", handler.HandlerGetAccountByAccountNumber)
+	r.POST("/account", handler.HandlerAccountStore)
+	r.PUT("/account", handler.HandlerAccountUpdate)
+	r.DELETE("/account", handler.HandlerAccountDelete)
+	r.POST("/account/:from_account_number/transfer", handler.HandlerAccountTransfer)
 
 	return r
 }
 
-func (c *AccountHandler) HandlerGetAccountList(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
+func (a *AccountHandler) HandlerGetAccountList(ctx *gin.Context) {
+	var filter domain.AccountListParam
+	err := ctx.ShouldBind(&filter)
 	if err != nil {
-		c.logger.Errorf("%s : %v", "AccountHandler/HandlerGetAccountList/ParseForm", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		a.logger.Errorf("%s : %v", "AccountHandler/HandlerGetAccountList/ShouldBindQuery", err)
+		ctx.String(http.StatusBadRequest, "Bad request")
 		return
 	}
 
-	filter, err := util.ParseQueryParams(r)
+	fmt.Println(filter)
+
+	accounts, err := a.accountUseCase.List(ctx, filter)
 	if err != nil {
-		c.logger.Errorf("%s : %v", "AccountHandler/HandlerGetAccountList/ParseQueryParams", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		a.logger.Errorf("%s : %v", "AccountHandler/HandlerGetAccountList/List", err)
+		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	customers, err := c.accountUseCase.List(r.Context(), domain.AccountListParam{Filter: filter})
-	if err != nil {
-		c.logger.Errorf("%s : %v", "AccountHandler/HandlerGetAccountList/List", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	json.NewEncoder(w).Encode(customers)
+	ctx.JSON(http.StatusOK, accounts)
 	return
 }
 
-func (c *AccountHandler) HandlerGetAccountByAccountNumber(w http.ResponseWriter, r *http.Request) {
-	v := mux.Vars(r)
-
-	customerNumber, err := strconv.Atoi(v["account_number"])
+func (a *AccountHandler) HandlerGetAccountByAccountNumber(ctx *gin.Context) {
+	customerNumber, err := strconv.Atoi(ctx.Param("account_number"))
 	if err != nil {
-		c.logger.Errorf("%s : %v", "AccountHandler/HandlerGetAccountByAccountNumber/parseAccountNumber", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		a.logger.Errorf("%s : %v", "AccountHandler/HandlerGetAccountByAccountNumber/parseAccountNumber", err)
+		ctx.AbortWithError(http.StatusBadRequest, errors.New("Account not exists"))
 		return
 	}
 
-	account, err := c.accountUseCase.GetByAccountNumber(r.Context(), customerNumber)
+	account, err := a.accountUseCase.GetByAccountNumber(ctx, customerNumber)
 	if err != nil {
-		c.logger.Errorf("%s : %v", "AccountHandler/HandlerGetAccountByAccountNumber/GetByAccountNumber", err)
+		a.logger.Errorf("%s : %v", "AccountHandler/HandlerGetAccountByAccountNumber/GetByAccountNumber", err)
 		if errors.Cause(err) == sql.ErrNoRows {
-			http.Error(w, "Account not exists", http.StatusNotFound)
+			ctx.AbortWithError(http.StatusNotFound, errors.New("Account not exists"))
 			return
 		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		ctx.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	json.NewEncoder(w).Encode(account)
+	ctx.JSON(http.StatusOK, account)
 	return
 }
 
-func (c *AccountHandler) HandlerAccountStore(w http.ResponseWriter, r *http.Request) {
+func (a *AccountHandler) HandlerAccountStore(ctx *gin.Context) {
 	var param domain.Account
-	err := util.ParseBodyData(r.Context(), r, &param)
+	err := ctx.Bind(&param)
 	if err != nil {
-		c.logger.Errorf("%s : %v", "AccountHandler/HandlerAccountStore/ParseBodyData", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		a.logger.Errorf("%s : %v", "AccountHandler/HandlerAccountStore/ParseBodyData", err)
+		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
-	err = c.accountUseCase.Store(r.Context(), &param)
+	err = a.accountUseCase.Store(ctx, &param)
 	if err != nil {
-		c.logger.Errorf("%s : %v", "AccountHandler/HandlerAccountStore/Store", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		a.logger.Errorf("%s : %v", "AccountHandler/HandlerAccountStore/Store", err)
+		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	ctx.Status(http.StatusCreated)
 	return
 }
 
-func (c *AccountHandler) HandlerAccountUpdate(w http.ResponseWriter, r *http.Request) {
-	var param domain.Account
-
-	err := util.ParseBodyData(r.Context(), r, &param)
-	if err != nil {
-		c.logger.Errorf("%s : %v", "AccountHandler/HandlerAccountUpdate/ParseBodyData", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	err = c.accountUseCase.Update(r.Context(), &param)
-	if err != nil {
-		c.logger.Errorf("%s : %v", "AccountHandler/HandlerAccountUpdate/Store", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
-	return
-}
-
-func (c *AccountHandler) HandlerAccountDelete(w http.ResponseWriter, r *http.Request) {
+func (a *AccountHandler) HandlerAccountUpdate(ctx *gin.Context) {
 	var param domain.Account
 
-	err := util.ParseBodyData(r.Context(), r, &param)
+	err := ctx.Bind(&param)
 	if err != nil {
-		c.logger.Errorf("%s : %v", "AccountHandler/HandlerAccountDelete/ParseBodyData", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		a.logger.Errorf("%s : %v", "AccountHandler/HandlerAccountUpdate/ParseBodyData", err)
+		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
-	err = c.accountUseCase.Delete(r.Context(), &param)
+	err = a.accountUseCase.Update(ctx, &param)
 	if err != nil {
-		c.logger.Errorf("%s : %v", "AccountHandler/HandlerAccountDelete/Store", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		a.logger.Errorf("%s : %v", "AccountHandler/HandlerAccountUpdate/Store", err)
+		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	ctx.Status(http.StatusNoContent)
 	return
 }
 
-func (c *AccountHandler) HandlerAccountTransfer(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+func (a *AccountHandler) HandlerAccountDelete(ctx *gin.Context) {
+	var param domain.Account
 
-	vars := mux.Vars(r)
-
-	fromAccountNumber, err := strconv.Atoi(vars["from_account_number"])
+	err := ctx.Bind(&param)
 	if err != nil {
-		c.logger.Errorf("%s : %v", "AccountHandler/HandlerAccountTransfer/parseFromAccountNumber", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		a.logger.Errorf("%s : %v", "AccountHandler/HandlerAccountDelete/ParseBodyData", err)
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	err = a.accountUseCase.Delete(ctx, &param)
+	if err != nil {
+		a.logger.Errorf("%s : %v", "AccountHandler/HandlerAccountDelete/Store", err)
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
+	return
+}
+
+func (a *AccountHandler) HandlerAccountTransfer(ctx *gin.Context) {
+	fromAccountNumber, err := strconv.Atoi(ctx.Param("from_account_number"))
+	if err != nil {
+		a.logger.Errorf("%s : %v", "AccountHandler/HandlerAccountTransfer/parseFromAccountNumber", err)
+		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
 	var param domain.TransferParam
-	err = util.ParseBodyData(ctx, r, &param)
+	err = ctx.Bind(&param)
 	if err != nil {
-		c.logger.Errorf("%s : %v", "AccountHandler/HandlerAccountTransfer/ParseBodyData", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		a.logger.Errorf("%s : %v", "AccountHandler/HandlerAccountTransfer/ParseBodyData", err)
+		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
-	err = c.accountUseCase.Transfer(ctx, fromAccountNumber, param)
+	err = a.accountUseCase.Transfer(ctx, fromAccountNumber, param)
 	if err != nil {
-		c.logger.Errorf("%s : %v", "AccountHandler/HandlerAccountTransfer/Transfer", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		a.logger.Errorf("%s : %v", "AccountHandler/HandlerAccountTransfer/Transfer", err)
+		ctx.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	ctx.Status(http.StatusNoContent)
 }

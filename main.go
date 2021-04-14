@@ -1,6 +1,6 @@
 package main
 
-import "linkaja-test/app"
+import "golang-backend-example/app"
 
 func main() {
 	app.Run()

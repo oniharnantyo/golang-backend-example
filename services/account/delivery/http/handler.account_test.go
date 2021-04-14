@@ -4,15 +4,14 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
-	"linkaja-test/domain"
-	account_usecase_mock "linkaja-test/services/account/usecase/mock"
+	"github.com/gin-gonic/gin"
+	"golang-backend-example/domain"
+	account_usecase_mock "golang-backend-example/services/account/usecase/mock"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/sirupsen/logrus"
-
-	"github.com/gorilla/mux"
 
 	"github.com/stretchr/testify/mock"
 
@@ -35,7 +34,7 @@ func TestAccountHandler_HandlerGetAccountList(t *testing.T) {
 
 	mockAccountUseCase.On("List", mock.Anything, mock.AnythingOfType("domain.AccountListParam")).Return(mockAccounts, nil).Once()
 
-	r := mux.NewRouter()
+	r := gin.Default()
 	r = NewAccountHandler(r, mockAccountUseCase, logger)
 
 	req, err := http.NewRequest(http.MethodGet, "/account?limit=10&offset=0&search=&order=asc", nil)
@@ -60,7 +59,7 @@ func TestAccountHandler_HandlerGetAccountByAccountNumber(t *testing.T) {
 
 		mockAccountUseCase.On("GetByAccountNumber", mock.Anything, mock.AnythingOfType("int")).Return(domain.DetailByAccountNumberResponse{}, nil).Once()
 
-		r := mux.NewRouter()
+		r := gin.Default()
 		r = NewAccountHandler(r, mockAccountUseCase, logger)
 
 		req, err := http.NewRequest(http.MethodGet, "/account/1001", nil)
@@ -84,7 +83,7 @@ func TestAccountHandler_HandlerGetAccountByAccountNumber(t *testing.T) {
 
 		mockAccountUseCase.On("GetByAccountNumber", mock.Anything, mock.AnythingOfType("int")).Return(domain.DetailByAccountNumberResponse{}, sql.ErrNoRows).Once()
 
-		r := mux.NewRouter()
+		r := gin.Default()
 		r = NewAccountHandler(r, mockAccountUseCase, logger)
 
 		req, err := http.NewRequest(http.MethodGet, "/account/1", nil)
@@ -110,7 +109,7 @@ func TestAccountHandler_HandlerAccountStore(t *testing.T) {
 
 	mockAccountUseCase.On("Store", mock.Anything, mock.AnythingOfType("*domain.Account")).Return(nil).Once()
 
-	r := mux.NewRouter()
+	r := gin.Default()
 	r = NewAccountHandler(r, mockAccountUseCase, logger)
 
 	reqBody, err := json.Marshal(mockAccount)
@@ -137,7 +136,7 @@ func TestAccountHandler_HandlerAccountUpdate(t *testing.T) {
 
 	mockAccountUseCase.On("Update", mock.Anything, mock.AnythingOfType("*domain.Account")).Return(nil).Once()
 
-	r := mux.NewRouter()
+	r := gin.Default()
 	r = NewAccountHandler(r, mockAccountUseCase, logger)
 
 	reqBody, err := json.Marshal(mockAccount)
@@ -164,7 +163,7 @@ func TestAccountHandler_HandlerAccountDelete(t *testing.T) {
 
 	mockAccountUseCase.On("Delete", mock.Anything, mock.AnythingOfType("*domain.Account")).Return(nil).Once()
 
-	r := mux.NewRouter()
+	r := gin.Default()
 	r = NewAccountHandler(r, mockAccountUseCase, logger)
 
 	reqBody, err := json.Marshal(mockAccount)

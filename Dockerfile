@@ -2,10 +2,10 @@ FROM golang:alpine
 
 RUN apk update && apk add --no-cache gcc musl-dev
 
-WORKDIR /linkaja-test
+WORKDIR /golang-backend-example
 
 COPY . .
 
-RUN go build -o linkaja-test
+RUN go build -o golang-backend-example
 
-CMD ["/linkaja-test/linkaja-test"]
+CMD ["/golang-backend-example/golang-backend-example"]

@@ -3,7 +3,7 @@ package usecase
 import (
 	"context"
 	"database/sql"
-	"linkaja-test/domain"
+	"golang-backend-example/domain"
 	"strconv"
 
 	"github.com/pkg/errors"
