@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
-	"github.com/gin-gonic/gin"
-	"golang-backend-example/domain"
-	customer_usecase_mock "golang-backend-example/services/customer/usecase/mock"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/oniharnantyo/golang-backend-example/domain"
+	customer_usecase_mock "github.com/oniharnantyo/golang-backend-example/services/customer/usecase/mock"
 
 	"github.com/sirupsen/logrus"
 

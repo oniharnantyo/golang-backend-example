@@ -2,7 +2,8 @@ package account_usecase_mock
 
 import (
 	"context"
-	"golang-backend-example/domain"
+
+	"github.com/oniharnantyo/golang-backend-example/domain"
 
 	"github.com/stretchr/testify/mock"
 )
@@ -47,4 +48,11 @@ func (c *AccountMockUseCase) Transfer(ctx context.Context, fromAccountNumber int
 	args := c.Called(ctx, fromAccountNumber, a)
 
 	return args.Error(0)
+}
+
+func (c *AccountMockUseCase) Login(ctx context.Context, param domain.AccountLoginParam) (domain.LoginResponse, error) {
+	args := c.Called(ctx, param)
+	result := args.Get(0)
+
+	return result.(domain.LoginResponse), args.Error(1)
 }

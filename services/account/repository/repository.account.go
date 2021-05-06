@@ -4,8 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"golang-backend-example/domain"
-	"golang-backend-example/util"
+
+	"github.com/oniharnantyo/golang-backend-example/domain"
+	"github.com/oniharnantyo/golang-backend-example/util"
 )
 
 type accountRepository struct {
@@ -28,7 +29,9 @@ func (c accountRepository) List(ctx context.Context, param domain.AccountListPar
 		SELECT
 			account_number,
 			customer_number,
-			balance
+			balance,
+			email,
+			password
 		FROM account
 			%s
 		ORDER BY account_number %s
@@ -52,6 +55,8 @@ func (c accountRepository) List(ctx context.Context, param domain.AccountListPar
 			&account.AccountNumber,
 			&account.CustomerNumber,
 			&account.Balance,
+			&account.Email,
+			&account.Password,
 		)
 		if err != nil {
 			return nil, err
@@ -68,7 +73,9 @@ func (c accountRepository) GetByAccountNumber(ctx context.Context, accountNumber
 		SELECT
 			account_number,
 			customer_number,
-			balance
+			balance,
+			email,
+			password
 		FROM account
 		WHERE
 			account_number = $1
@@ -82,6 +89,39 @@ func (c accountRepository) GetByAccountNumber(ctx context.Context, accountNumber
 		&account.AccountNumber,
 		&account.CustomerNumber,
 		&account.Balance,
+		&account.Email,
+		&account.Password,
+	)
+	if err != nil {
+		return domain.Account{}, err
+	}
+
+	return account, nil
+}
+
+func (c accountRepository) GetByEmail(ctx context.Context, email string) (domain.Account, error) {
+	stmt, err := c.dbPool.Prepare(fmt.Sprintf(`
+		SELECT
+			account_number,
+			customer_number,
+			balance,
+			email,
+			password
+		FROM account
+		WHERE
+			email = $1
+	`))
+	if err != nil {
+		return domain.Account{}, err
+	}
+
+	var account domain.Account
+	err = stmt.QueryRowContext(ctx, email).Scan(
+		&account.AccountNumber,
+		&account.CustomerNumber,
+		&account.Balance,
+		&account.Email,
+		&account.Password,
 	)
 	if err != nil {
 		return domain.Account{}, err
@@ -95,9 +135,11 @@ func (c accountRepository) Store(ctx context.Context, a *domain.Account) error {
 		INSERT INTO account (
 			account_number,
 			customer_number,
-			balance
+			balance,
+			email,
+			password
 		) VALUES (
-			$1, $2, $3
+			$1, $2, $3, $4, $5
 		)`))
 	if err != nil {
 		return err
@@ -106,7 +148,10 @@ func (c accountRepository) Store(ctx context.Context, a *domain.Account) error {
 	_, err = stmt.ExecContext(ctx,
 		&a.AccountNumber,
 		&a.CustomerNumber,
-		&a.Balance)
+		&a.Balance,
+		&a.Email,
+		&a.Password,
+	)
 	if err != nil {
 		return err
 	}
@@ -118,15 +163,23 @@ func (c accountRepository) Update(ctx context.Context, a *domain.Account) error 
 	stmt, err := c.dbPool.Prepare(fmt.Sprintf(`
 		UPDATE account SET
 			customer_number = $1,
-			balance = $2
+			balance = $2,
+			email = $3,
+			password = $4
 		WHERE
-			account_number = $3
+			account_number = $5
 	`))
+	if err != nil {
+		return err
+	}
 
 	_, err = stmt.ExecContext(ctx,
 		a.CustomerNumber,
 		a.Balance,
-		a.AccountNumber)
+		a.AccountNumber,
+		a.Email,
+		a.Password,
+	)
 	if err != nil {
 		return err
 	}

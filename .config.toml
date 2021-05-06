@@ -1,7 +1,14 @@
 [app]
-    name        = "golang-backend-example"
+    name        = "github.com/oniharnantyo/golang-backend-example"
     environment = "development"
     port        = 8000
+
+[security]
+    access_secret = "secret"
+    access_secret_expire_after_minute = 15
+    refresh_secret = "refresh_secret"
+    refresh_secret_expire_after_day = 30
+
 
 [database]
     host        = "127.0.0.1" # Change to localhost on local machine development
@@ -10,3 +17,7 @@
     username    = "postgres"
     password    = "password"
     sslmode     = "disable"
+
+[redis]
+    host        = "127.0.0.1"
+    port        = 6379

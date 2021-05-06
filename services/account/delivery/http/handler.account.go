@@ -3,10 +3,13 @@ package delivery_http_account
 import (
 	"database/sql"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"golang-backend-example/domain"
 	"net/http"
 	"strconv"
+	"strings"
+
+	"github.com/oniharnantyo/golang-backend-example/domain"
+
+	"github.com/gin-gonic/gin"
 
 	"github.com/pkg/errors"
 
@@ -21,11 +24,12 @@ type AccountHandler struct {
 func NewAccountHandler(r *gin.Engine, ctx domain.AccountUseCase, l *logrus.Logger) *gin.Engine {
 	handler := &AccountHandler{accountUseCase: ctx, logger: l}
 
-	r.GET("/account",handler.HandlerGetAccountList)
+	r.GET("/account", handler.HandlerGetAccountList)
 	r.GET("/account/:account_number", handler.HandlerGetAccountByAccountNumber)
 	r.POST("/account", handler.HandlerAccountStore)
 	r.PUT("/account", handler.HandlerAccountUpdate)
 	r.DELETE("/account", handler.HandlerAccountDelete)
+	r.POST("/account/login", handler.HandlerLogin)
 	r.POST("/account/:from_account_number/transfer", handler.HandlerAccountTransfer)
 
 	return r
@@ -162,4 +166,27 @@ func (a *AccountHandler) HandlerAccountTransfer(ctx *gin.Context) {
 	}
 
 	ctx.Status(http.StatusNoContent)
+}
+
+func (a *AccountHandler) HandlerLogin(ctx *gin.Context) {
+	var param domain.AccountLoginParam
+	err := ctx.Bind(&param)
+	if err != nil {
+		a.logger.Errorf("%s : %v", "AccountHandler/HandlerLogin/Bind", err)
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	response, err := a.accountUseCase.Login(ctx, param)
+	if err != nil {
+		a.logger.Errorf("%s : %v", "AccountHandler/HandlerLogin/Login", err)
+		if strings.Contains(err.Error(), "sql: no rows in result set") {
+			ctx.AbortWithError(http.StatusBadRequest, errors.New("Email not found"))
+		} else if strings.Contains(err.Error(), "hashedPassword is not the hash of the given password") {
+			ctx.AbortWithError(http.StatusUnauthorized, errors.New("Invalid password"))
+		}
+		return
+	}
+
+	ctx.JSON(http.StatusOK, response)
 }

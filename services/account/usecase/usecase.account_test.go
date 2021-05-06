@@ -3,10 +3,11 @@ package usecase
 import (
 	"context"
 	"database/sql"
-	"golang-backend-example/domain"
-	repository_account_mock "golang-backend-example/services/account/repository/mock"
-	repository_customer_mock "golang-backend-example/services/customer/repository/mock"
 	"testing"
+
+	"github.com/oniharnantyo/golang-backend-example/domain"
+	repository_account_mock "github.com/oniharnantyo/golang-backend-example/services/account/repository/mock"
+	repository_customer_mock "github.com/oniharnantyo/golang-backend-example/services/customer/repository/mock"
 
 	"github.com/pkg/errors"
 
@@ -286,5 +287,43 @@ func TestAccountUseCase_Transfer(t *testing.T) {
 		transferParam.Amount = 100000
 		err := customerUseCase.Transfer(context.Background(), accountSenderData.AccountNumber, transferParam)
 		assert.Error(t, err)
+	})
+}
+
+func TestAccountUseCase_Login(t *testing.T) {
+	logger := logrus.New()
+
+	mockAccountRepo := new(repository_account_mock.AccountMockRepository)
+	mockCustomerRepo := new(repository_customer_mock.CustomerMockRepository)
+
+	customerUseCase := NewAccountUseCase(mockAccountRepo, mockCustomerRepo, logger)
+
+	accountData := domain.Account{
+		AccountNumber:  555001,
+		CustomerNumber: 1001,
+		Balance:        10000,
+		Email:          "email@mail.com",
+		Password:       "$2y$12$55Pvvir6aXTbi3tE5toEyuUMgPCJ1uytiVREzrSHDgXoNFva7kLOK", //Secret
+	}
+
+	t.Run("email-not-found", func(t *testing.T) {
+		mockAccountRepo.On("GetByEmail", mock.Anything, mock.AnythingOfType("string")).Return(domain.Account{}, sql.ErrNoRows).Once()
+
+		response, err := customerUseCase.Login(context.Background(), domain.AccountLoginParam{
+			Email:    "email1@mail.com",
+			Password: "secret",
+		})
+		assert.Error(t, err)
+		assert.Empty(t, response.Token)
+	})
+
+	t.Run("invalid-password", func(t *testing.T) {
+		mockAccountRepo.On("GetByEmail", mock.Anything, mock.AnythingOfType("string")).Return(accountData, nil).Once()
+		response, err := customerUseCase.Login(context.Background(), domain.AccountLoginParam{
+			Email:    "email@mail.com",
+			Password: "secret1",
+		})
+		assert.Error(t, err)
+		assert.Empty(t, response.Token)
 	})
 }

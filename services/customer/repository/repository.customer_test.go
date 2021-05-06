@@ -4,10 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"golang-backend-example/domain"
-	"golang-backend-example/util"
 	"log"
 	"testing"
+
+	"github.com/oniharnantyo/golang-backend-example/domain"
+	"github.com/oniharnantyo/golang-backend-example/util"
 
 	"github.com/stretchr/testify/assert"
 

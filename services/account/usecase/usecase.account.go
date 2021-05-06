@@ -3,8 +3,12 @@ package usecase
 import (
 	"context"
 	"database/sql"
-	"golang-backend-example/domain"
 	"strconv"
+
+	"github.com/oniharnantyo/golang-backend-example/domain"
+	"github.com/oniharnantyo/golang-backend-example/middleware"
+
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -127,6 +131,28 @@ func (c accountUseCase) Transfer(ctx context.Context, fromAccountNumber int, par
 	}
 
 	return nil
+}
+
+func (c accountUseCase) Login(ctx context.Context, param domain.AccountLoginParam) (domain.LoginResponse, error) {
+	account, err := c.accountRepository.GetByEmail(ctx, param.Email)
+	if err != nil {
+		c.logger.Errorf("accountUseCase/Transfer/receiverAccount/GetByEmail :%v", err)
+		return domain.LoginResponse{}, err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(account.Password), []byte(param.Password))
+	if err != nil {
+		c.logger.Errorf("accountUseCase/Transfer/receiverAccount/CompareHashAndPassword :%v", err)
+		return domain.LoginResponse{}, err
+	}
+
+	token, err := middleware.CreateToken(account)
+	if err != nil {
+		c.logger.Errorf("accountUseCase/Transfer/receiverAccount/CreateToken :%v", err)
+		return domain.LoginResponse{}, err
+	}
+
+	return domain.LoginResponse{token}, nil
 }
 
 func NewAccountUseCase(a domain.AccountRepository, c domain.CustomerRepository, log *logrus.Logger) domain.AccountUseCase {

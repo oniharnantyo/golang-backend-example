@@ -3,7 +3,8 @@ package usecase
 import (
 	"context"
 	"database/sql"
-	"golang-backend-example/domain"
+
+	"github.com/oniharnantyo/golang-backend-example/domain"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"

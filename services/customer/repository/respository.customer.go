@@ -4,8 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"golang-backend-example/domain"
-	"golang-backend-example/util"
+
+	"github.com/oniharnantyo/golang-backend-example/domain"
+	"github.com/oniharnantyo/golang-backend-example/util"
 )
 
 type customerRepository struct {

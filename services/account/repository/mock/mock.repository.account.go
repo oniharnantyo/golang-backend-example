@@ -2,7 +2,8 @@ package repository_customer_mock
 
 import (
 	"context"
-	"golang-backend-example/domain"
+
+	"github.com/oniharnantyo/golang-backend-example/domain"
 
 	"github.com/stretchr/testify/mock"
 )
@@ -20,6 +21,13 @@ func (c *AccountMockRepository) List(ctx context.Context, param domain.AccountLi
 
 func (c *AccountMockRepository) GetByAccountNumber(ctx context.Context, customerNumber int) (domain.Account, error) {
 	args := c.Called(ctx, customerNumber)
+	result := args.Get(0)
+
+	return result.(domain.Account), args.Error(1)
+}
+
+func (c *AccountMockRepository) GetByEmail(ctx context.Context, email string) (domain.Account, error) {
+	args := c.Called(ctx, email)
 	result := args.Get(0)
 
 	return result.(domain.Account), args.Error(1)

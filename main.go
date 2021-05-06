@@ -1,6 +1,6 @@
 package main
 
-import "golang-backend-example/app"
+import "github.com/oniharnantyo/golang-backend-example/app"
 
 func main() {
 	app.Run()

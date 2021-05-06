@@ -5,13 +5,13 @@ run:
 	@go run main.go
 
 build:
-	@go build -o golang-backend-example main.go
+	@go build -o github.com/oniharnantyo/golang-backend-example main.go
 
 docker:
-	@docker build -t oniharnantyo/golang-backend-example .
+	@docker build -t oniharnantyo/github.com/oniharnantyo/golang-backend-example .
 
 docker-compose:
 	@docker-compose up -d
 
 docker-push:
-	@docker push oniharnantyo/golang-backend-example
+	@docker push oniharnantyo/github.com/oniharnantyo/golang-backend-example

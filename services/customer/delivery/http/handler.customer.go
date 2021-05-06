@@ -2,10 +2,11 @@ package delivery_http_customer
 
 import (
 	"database/sql"
-	"github.com/gin-gonic/gin"
-	"golang-backend-example/domain"
 	"net/http"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
+	"github.com/oniharnantyo/golang-backend-example/domain"
 
 	"github.com/pkg/errors"
 
@@ -21,8 +22,8 @@ func NewCustomerHandler(r *gin.Engine, c domain.CustomerUseCase, l *logrus.Logge
 	handler := &CustomerHandler{customerUseCase: c, logger: l}
 
 	r.GET("/customer", handler.HandlerGetCustomerList)
-	r.GET("/customer/:customer_number",handler.HandlerGetCustomerByCustomerNumber)
-	r.POST("/customer",handler.HandlerCustomerStore)
+	r.GET("/customer/:customer_number", handler.HandlerGetCustomerByCustomerNumber)
+	r.POST("/customer", handler.HandlerCustomerStore)
 	r.PUT("/customer", handler.HandlerCustomerUpdate)
 	r.DELETE("/customer", handler.HandlerCustomerDelete)
 

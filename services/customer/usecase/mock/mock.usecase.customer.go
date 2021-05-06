@@ -2,7 +2,8 @@ package mock
 
 import (
 	"context"
-	"golang-backend-example/domain"
+
+	"github.com/oniharnantyo/golang-backend-example/domain"
 
 	"github.com/stretchr/testify/mock"
 )

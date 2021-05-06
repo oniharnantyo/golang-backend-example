@@ -4,11 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
-	"golang-backend-example/database"
-	"golang-backend-example/database/migration"
-	"golang-backend-example/domain"
 	"log"
 	"net/http"
 	"os"
@@ -16,15 +11,21 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gin-gonic/gin"
+	"github.com/oniharnantyo/golang-backend-example/database"
+	"github.com/oniharnantyo/golang-backend-example/database/migration"
+	"github.com/oniharnantyo/golang-backend-example/domain"
+	"github.com/pkg/errors"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
-	delivery_http_account "golang-backend-example/services/account/delivery/http"
-	repository_account "golang-backend-example/services/account/repository"
-	usecase_account "golang-backend-example/services/account/usecase"
-	delivery_http_customer "golang-backend-example/services/customer/delivery/http"
-	repository_customer "golang-backend-example/services/customer/repository"
-	usecase_customer "golang-backend-example/services/customer/usecase"
+	delivery_http_account "github.com/oniharnantyo/golang-backend-example/services/account/delivery/http"
+	repository_account "github.com/oniharnantyo/golang-backend-example/services/account/repository"
+	usecase_account "github.com/oniharnantyo/golang-backend-example/services/account/usecase"
+	delivery_http_customer "github.com/oniharnantyo/golang-backend-example/services/customer/delivery/http"
+	repository_customer "github.com/oniharnantyo/golang-backend-example/services/customer/repository"
+	usecase_customer "github.com/oniharnantyo/golang-backend-example/services/customer/usecase"
 )
 
 func Run() {

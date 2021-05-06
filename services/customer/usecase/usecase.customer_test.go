@@ -3,9 +3,10 @@ package usecase
 import (
 	"context"
 	"database/sql"
-	"golang-backend-example/domain"
-	repository_customer_mock "golang-backend-example/services/customer/repository/mock"
 	"testing"
+
+	"github.com/oniharnantyo/golang-backend-example/domain"
+	repository_customer_mock "github.com/oniharnantyo/golang-backend-example/services/customer/repository/mock"
 
 	"github.com/pkg/errors"
 
