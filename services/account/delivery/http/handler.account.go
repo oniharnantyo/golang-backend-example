@@ -7,6 +7,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/oniharnantyo/golang-backend-example/util"
+
+	"github.com/oniharnantyo/golang-backend-example/middleware"
+
 	"github.com/oniharnantyo/golang-backend-example/domain"
 
 	"github.com/gin-gonic/gin"
@@ -30,7 +34,7 @@ func NewAccountHandler(r *gin.Engine, ctx domain.AccountUseCase, l *logrus.Logge
 	r.PUT("/account", handler.HandlerAccountUpdate)
 	r.DELETE("/account", handler.HandlerAccountDelete)
 	r.POST("/account/login", handler.HandlerLogin)
-	r.POST("/account/:from_account_number/transfer", handler.HandlerAccountTransfer)
+	r.POST("/account/:from_account_number/transfer", middleware.JWT(), handler.HandlerAccountTransfer)
 
 	return r
 }
@@ -181,10 +185,15 @@ func (a *AccountHandler) HandlerLogin(ctx *gin.Context) {
 	if err != nil {
 		a.logger.Errorf("%s : %v", "AccountHandler/HandlerLogin/Login", err)
 		if strings.Contains(err.Error(), "sql: no rows in result set") {
-			ctx.AbortWithError(http.StatusBadRequest, errors.New("Email not found"))
+			ctx.JSON(http.StatusBadRequest, util.Response{
+				Errors: []string{"Email not found"},
+			})
 		} else if strings.Contains(err.Error(), "hashedPassword is not the hash of the given password") {
-			ctx.AbortWithError(http.StatusUnauthorized, errors.New("Invalid password"))
+			ctx.JSON(http.StatusUnauthorized, util.Response{
+				Errors: []string{"Invalid Password"},
+			})
 		}
+		ctx.Abort()
 		return
 	}
 

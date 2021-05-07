@@ -11,6 +11,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/go-redis/redis/v8"
+
 	"github.com/gin-gonic/gin"
 	"github.com/oniharnantyo/golang-backend-example/database"
 	"github.com/oniharnantyo/golang-backend-example/database/migration"
@@ -23,6 +25,8 @@ import (
 	delivery_http_account "github.com/oniharnantyo/golang-backend-example/services/account/delivery/http"
 	repository_account "github.com/oniharnantyo/golang-backend-example/services/account/repository"
 	usecase_account "github.com/oniharnantyo/golang-backend-example/services/account/usecase"
+	repository_auth "github.com/oniharnantyo/golang-backend-example/services/auth/repository"
+	usecase_auth "github.com/oniharnantyo/golang-backend-example/services/auth/usecase"
 	delivery_http_customer "github.com/oniharnantyo/golang-backend-example/services/customer/delivery/http"
 	repository_customer "github.com/oniharnantyo/golang-backend-example/services/customer/repository"
 	usecase_customer "github.com/oniharnantyo/golang-backend-example/services/customer/usecase"
@@ -38,7 +42,9 @@ func Run() {
 		logger.Fatalf("%s: %v", "Error on connect to database", err)
 	}
 
-	accountUseCase, customerUseCase := initService(dbPool, logger)
+	redisClient := initRedis()
+
+	accountUseCase, customerUseCase := initService(dbPool, redisClient, logger)
 
 	initHandler(accountUseCase, customerUseCase, logger)
 }
@@ -90,11 +96,28 @@ func initDatabase() (*sql.DB, error) {
 	return dbPool, nil
 }
 
-func initService(dbPool *sql.DB, logger *logrus.Logger) (domain.AccountUseCase, domain.CustomerUseCase) {
+func initRedis() *redis.Client {
+	client := redis.NewClient(
+		&redis.Options{
+			Addr:     fmt.Sprintf(`%s:%d`, viper.GetString("redis.host"), viper.GetInt("redis.port")),
+			Password: viper.GetString("redis.password"),
+		},
+	)
+
+	return client
+}
+
+func initService(dbPool *sql.DB, redisClient *redis.Client, logger *logrus.Logger) (domain.AccountUseCase, domain.CustomerUseCase) {
 	accountRepository := repository_account.NewAccountRepository(dbPool)
 	customerRepository := repository_customer.NewCustomerRepository(dbPool)
+	authRepository := repository_auth.NewAuthRepository(redisClient)
 
-	accountUseCase := usecase_account.NewAccountUseCase(accountRepository, customerRepository, logger)
+	authUseCase := usecase_auth.NewAuthUseCase(authRepository,
+		viper.GetString("security.access_secret"),
+		viper.GetInt("security.access_secret_expire_after_minute"),
+		viper.GetString("security.refresh_secret"),
+		viper.GetInt("security.refresh_secret_expire_after_day"))
+	accountUseCase := usecase_account.NewAccountUseCase(authUseCase, accountRepository, customerRepository, logger)
 	customerUseCase := usecase_customer.NewCustomerUseCase(customerRepository, logger)
 
 	return accountUseCase, customerUseCase

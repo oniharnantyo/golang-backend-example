@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"testing"
 
+	auth_usecase_mock "github.com/oniharnantyo/golang-backend-example/services/auth/usecase/mock"
+
 	"github.com/oniharnantyo/golang-backend-example/domain"
 	repository_account_mock "github.com/oniharnantyo/golang-backend-example/services/account/repository/mock"
 	repository_customer_mock "github.com/oniharnantyo/golang-backend-example/services/customer/repository/mock"
@@ -18,11 +20,20 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+var (
+	AccessSecret                  string = "secret"
+	AccessSecretExpireAfterMinute int    = 15
+	RefreshSecret                 string = "refresh"
+	RefreshSecretExpireAfterDay   int    = 30
+)
+
 func TestAccountUseCase_List(t *testing.T) {
 	logger := logrus.New()
 
 	mockAccountRepo := new(repository_account_mock.AccountMockRepository)
 	mockCustomerRepo := new(repository_customer_mock.CustomerMockRepository)
+
+	mockAuthUseCase := new(auth_usecase_mock.AuthMockUseCase)
 
 	customersData := []domain.Account{
 		{
@@ -40,7 +51,7 @@ func TestAccountUseCase_List(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		mockAccountRepo.On("List", mock.Anything, mock.AnythingOfType("domain.AccountListParam")).Return(customersData, nil).Once()
 
-		customerUseCase := NewAccountUseCase(mockAccountRepo, mockCustomerRepo, logger)
+		customerUseCase := NewAccountUseCase(mockAuthUseCase, mockAccountRepo, mockCustomerRepo, logger)
 
 		cDatas, err := customerUseCase.List(context.Background(), domain.AccountListParam{})
 		assert.NoError(t, err)
@@ -52,7 +63,7 @@ func TestAccountUseCase_List(t *testing.T) {
 	t.Run("Failed", func(t *testing.T) {
 		mockAccountRepo.On("List", mock.Anything, mock.AnythingOfType("domain.AccountListParam")).Return([]domain.Account{}, errors.New("Unexpected")).Once()
 
-		customerUseCase := NewAccountUseCase(mockAccountRepo, mockCustomerRepo, logger)
+		customerUseCase := NewAccountUseCase(mockAuthUseCase, mockAccountRepo, mockCustomerRepo, logger)
 
 		cDatas, err := customerUseCase.List(context.Background(), domain.AccountListParam{})
 		assert.Error(t, err)
@@ -69,6 +80,8 @@ func TestAccountUseCase_GetByAccountNumber(t *testing.T) {
 	mockAccountRepo := new(repository_account_mock.AccountMockRepository)
 	mockCustomerRepo := new(repository_customer_mock.CustomerMockRepository)
 
+	mockAuthUseCase := new(auth_usecase_mock.AuthMockUseCase)
+
 	accountData := domain.Account{
 		AccountNumber:  555001,
 		CustomerNumber: 1001,
@@ -84,7 +97,7 @@ func TestAccountUseCase_GetByAccountNumber(t *testing.T) {
 		mockAccountRepo.On("GetByAccountNumber", mock.Anything, mock.AnythingOfType("int")).Return(accountData, nil).Once()
 		mockCustomerRepo.On("GetByCustomerNumber", mock.Anything, mock.AnythingOfType("int")).Return(customerData, nil).Once()
 
-		customerUseCase := NewAccountUseCase(mockAccountRepo, mockCustomerRepo, logger)
+		customerUseCase := NewAccountUseCase(mockAuthUseCase, mockAccountRepo, mockCustomerRepo, logger)
 
 		cData, err := customerUseCase.GetByAccountNumber(context.Background(), 1001)
 		assert.NoError(t, err)
@@ -97,7 +110,7 @@ func TestAccountUseCase_GetByAccountNumber(t *testing.T) {
 		mockAccountRepo.On("GetByAccountNumber", mock.Anything, mock.AnythingOfType("int")).Return(domain.Account{}, sql.ErrNoRows).Once()
 		mockCustomerRepo.On("GetByCustomerNumber", mock.Anything, mock.AnythingOfType("int")).Return(domain.Customer{}, nil).Once()
 
-		customerUseCase := NewAccountUseCase(mockAccountRepo, mockCustomerRepo, logger)
+		customerUseCase := NewAccountUseCase(mockAuthUseCase, mockAccountRepo, mockCustomerRepo, logger)
 
 		cData, err := customerUseCase.GetByAccountNumber(context.Background(), 0)
 		assert.Error(t, err)
@@ -113,6 +126,8 @@ func TestAccountUseCase_Store(t *testing.T) {
 	mockAccountRepo := new(repository_account_mock.AccountMockRepository)
 	mockCustomerRepo := new(repository_customer_mock.CustomerMockRepository)
 
+	mockAuthUseCase := new(auth_usecase_mock.AuthMockUseCase)
+
 	accountData := domain.Account{
 		AccountNumber:  555001,
 		CustomerNumber: 1001,
@@ -122,7 +137,7 @@ func TestAccountUseCase_Store(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		mockAccountRepo.On("Store", mock.Anything, mock.AnythingOfType("*domain.Account")).Return(nil).Once()
 
-		customerUseCase := NewAccountUseCase(mockAccountRepo, mockCustomerRepo, logger)
+		customerUseCase := NewAccountUseCase(mockAuthUseCase, mockAccountRepo, mockCustomerRepo, logger)
 
 		err := customerUseCase.Store(context.Background(), &accountData)
 		assert.NoError(t, err)
@@ -133,7 +148,7 @@ func TestAccountUseCase_Store(t *testing.T) {
 	t.Run("Failed", func(t *testing.T) {
 		mockAccountRepo.On("Store", mock.Anything, mock.AnythingOfType("*domain.Account")).Return(errors.New("Unexpected")).Once()
 
-		customerUseCase := NewAccountUseCase(mockAccountRepo, mockCustomerRepo, logger)
+		customerUseCase := NewAccountUseCase(mockAuthUseCase, mockAccountRepo, mockCustomerRepo, logger)
 
 		err := customerUseCase.Store(context.Background(), &accountData)
 		assert.Error(t, err)
@@ -148,6 +163,8 @@ func TestAccountUseCase_Update(t *testing.T) {
 	mockAccountRepo := new(repository_account_mock.AccountMockRepository)
 	mockCustomerRepo := new(repository_customer_mock.CustomerMockRepository)
 
+	mockAuthUseCase := new(auth_usecase_mock.AuthMockUseCase)
+
 	customerData := domain.Account{
 		AccountNumber:  555001,
 		CustomerNumber: 1001,
@@ -157,7 +174,7 @@ func TestAccountUseCase_Update(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		mockAccountRepo.On("Update", mock.Anything, mock.AnythingOfType("*domain.Account")).Return(nil).Once()
 
-		customerUseCase := NewAccountUseCase(mockAccountRepo, mockCustomerRepo, logger)
+		customerUseCase := NewAccountUseCase(mockAuthUseCase, mockAccountRepo, mockCustomerRepo, logger)
 
 		err := customerUseCase.Update(context.Background(), &customerData)
 		assert.NoError(t, err)
@@ -168,7 +185,7 @@ func TestAccountUseCase_Update(t *testing.T) {
 	t.Run("Failed", func(t *testing.T) {
 		mockAccountRepo.On("Update", mock.Anything, mock.AnythingOfType("*domain.Account")).Return(errors.New("Unexpected")).Once()
 
-		customerUseCase := NewAccountUseCase(mockAccountRepo, mockCustomerRepo, logger)
+		customerUseCase := NewAccountUseCase(mockAuthUseCase, mockAccountRepo, mockCustomerRepo, logger)
 
 		err := customerUseCase.Update(context.Background(), &customerData)
 		assert.Error(t, err)
@@ -183,6 +200,8 @@ func TestAccountUseCase_Delete(t *testing.T) {
 	mockAccountRepo := new(repository_account_mock.AccountMockRepository)
 	mockCustomerRepo := new(repository_customer_mock.CustomerMockRepository)
 
+	mockAuthUseCase := new(auth_usecase_mock.AuthMockUseCase)
+
 	customerData := domain.Account{
 		AccountNumber:  555001,
 		CustomerNumber: 1001,
@@ -192,7 +211,7 @@ func TestAccountUseCase_Delete(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		mockAccountRepo.On("Delete", mock.Anything, mock.AnythingOfType("*domain.Account")).Return(nil).Once()
 
-		customerUseCase := NewAccountUseCase(mockAccountRepo, mockCustomerRepo, logger)
+		customerUseCase := NewAccountUseCase(mockAuthUseCase, mockAccountRepo, mockCustomerRepo, logger)
 
 		err := customerUseCase.Delete(context.Background(), &customerData)
 		assert.NoError(t, err)
@@ -203,7 +222,7 @@ func TestAccountUseCase_Delete(t *testing.T) {
 	t.Run("Failed", func(t *testing.T) {
 		mockAccountRepo.On("Delete", mock.Anything, mock.AnythingOfType("*domain.Account")).Return(errors.New("Unexpected")).Once()
 
-		customerUseCase := NewAccountUseCase(mockAccountRepo, mockCustomerRepo, logger)
+		customerUseCase := NewAccountUseCase(mockAuthUseCase, mockAccountRepo, mockCustomerRepo, logger)
 
 		err := customerUseCase.Delete(context.Background(), &customerData)
 		assert.Error(t, err)
@@ -217,6 +236,8 @@ func TestAccountUseCase_Transfer(t *testing.T) {
 
 	mockAccountRepo := new(repository_account_mock.AccountMockRepository)
 	mockCustomerRepo := new(repository_customer_mock.CustomerMockRepository)
+
+	mockAuthUseCase := new(auth_usecase_mock.AuthMockUseCase)
 
 	accountSenderData := domain.Account{
 		AccountNumber:  555001,
@@ -244,7 +265,7 @@ func TestAccountUseCase_Transfer(t *testing.T) {
 		accountSenderData.Balance = accountSenderData.Balance - transferParam.Amount
 		accountReceiverData.Balance = accountReceiverData.Balance + transferParam.Amount
 
-		customerUseCase := NewAccountUseCase(mockAccountRepo, mockCustomerRepo, logger)
+		customerUseCase := NewAccountUseCase(mockAuthUseCase, mockAccountRepo, mockCustomerRepo, logger)
 
 		err := customerUseCase.Transfer(context.Background(), accountSenderData.AccountNumber, transferParam)
 		assert.NoError(t, err)
@@ -256,7 +277,7 @@ func TestAccountUseCase_Transfer(t *testing.T) {
 	t.Run("Account-sender-not-exists", func(t *testing.T) {
 		mockAccountRepo.On("GetByAccountNumber", mock.Anything, mock.AnythingOfType("int")).Return(domain.Account{}, sql.ErrNoRows).Once()
 
-		customerUseCase := NewAccountUseCase(mockAccountRepo, mockCustomerRepo, logger)
+		customerUseCase := NewAccountUseCase(mockAuthUseCase, mockAccountRepo, mockCustomerRepo, logger)
 
 		err := customerUseCase.Transfer(context.Background(), accountSenderData.AccountNumber, transferParam)
 		assert.Error(t, err)
@@ -268,7 +289,7 @@ func TestAccountUseCase_Transfer(t *testing.T) {
 		mockAccountRepo.On("GetByAccountNumber", mock.Anything, mock.AnythingOfType("int")).Return(accountSenderData, nil).Once()
 		mockAccountRepo.On("GetByAccountNumber", mock.Anything, mock.AnythingOfType("int")).Return(domain.Account{}, sql.ErrNoRows).Once()
 
-		customerUseCase := NewAccountUseCase(mockAccountRepo, mockCustomerRepo, logger)
+		customerUseCase := NewAccountUseCase(mockAuthUseCase, mockAccountRepo, mockCustomerRepo, logger)
 
 		err := customerUseCase.Transfer(context.Background(), accountSenderData.AccountNumber, transferParam)
 		assert.Error(t, err)
@@ -282,7 +303,7 @@ func TestAccountUseCase_Transfer(t *testing.T) {
 		mockAccountRepo.On("Update", mock.Anything, &accountSenderData).Return(nil).Once()
 		mockAccountRepo.On("Update", mock.Anything, &accountReceiverData).Return(nil).Once()
 
-		customerUseCase := NewAccountUseCase(mockAccountRepo, mockCustomerRepo, logger)
+		customerUseCase := NewAccountUseCase(mockAuthUseCase, mockAccountRepo, mockCustomerRepo, logger)
 
 		transferParam.Amount = 100000
 		err := customerUseCase.Transfer(context.Background(), accountSenderData.AccountNumber, transferParam)
@@ -295,8 +316,9 @@ func TestAccountUseCase_Login(t *testing.T) {
 
 	mockAccountRepo := new(repository_account_mock.AccountMockRepository)
 	mockCustomerRepo := new(repository_customer_mock.CustomerMockRepository)
+	mockAuthUseCase := new(auth_usecase_mock.AuthMockUseCase)
 
-	customerUseCase := NewAccountUseCase(mockAccountRepo, mockCustomerRepo, logger)
+	customerUseCase := NewAccountUseCase(mockAuthUseCase, mockAccountRepo, mockCustomerRepo, logger)
 
 	accountData := domain.Account{
 		AccountNumber:  555001,
@@ -308,6 +330,7 @@ func TestAccountUseCase_Login(t *testing.T) {
 
 	t.Run("email-not-found", func(t *testing.T) {
 		mockAccountRepo.On("GetByEmail", mock.Anything, mock.AnythingOfType("string")).Return(domain.Account{}, sql.ErrNoRows).Once()
+		mockAuthUseCase.On("CreateAuth", mock.Anything, accountData).Return(domain.Auth{}, nil).Once()
 
 		response, err := customerUseCase.Login(context.Background(), domain.AccountLoginParam{
 			Email:    "email1@mail.com",
@@ -319,6 +342,8 @@ func TestAccountUseCase_Login(t *testing.T) {
 
 	t.Run("invalid-password", func(t *testing.T) {
 		mockAccountRepo.On("GetByEmail", mock.Anything, mock.AnythingOfType("string")).Return(accountData, nil).Once()
+		mockAuthUseCase.On("CreateAuth", mock.Anything, accountData).Return(domain.Auth{}, nil).Once()
+
 		response, err := customerUseCase.Login(context.Background(), domain.AccountLoginParam{
 			Email:    "email@mail.com",
 			Password: "secret1",
